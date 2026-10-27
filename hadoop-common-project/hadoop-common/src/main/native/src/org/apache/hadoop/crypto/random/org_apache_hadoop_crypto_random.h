@@ -33,7 +33,9 @@
 #define UNUSED(x) ((void)(x))
 
 #include <openssl/crypto.h>
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #include <openssl/engine.h>
+#endif
 #include <openssl/rand.h>
 #include <openssl/err.h>
 

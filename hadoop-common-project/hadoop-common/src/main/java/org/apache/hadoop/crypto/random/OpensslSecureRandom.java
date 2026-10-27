@@ -32,11 +32,10 @@ import org.slf4j.LoggerFactory;
  * This implementation is thread-safe.
  * <p>
  * 
- * If using an Intel chipset with RDRAND, the high-performance hardware 
- * random number generator will be used and it's much faster than
- * {@link java.security.SecureRandom}. If RDRAND is unavailable, default
- * OpenSSL secure random generator will be used. It's still faster
- * and can generate strong random bytes.
+ * When built against OpenSSL older than 3.0 on a CPU with RDRAND, the
+ * hardware random number generator is used through OpenSSL's RDRAND engine.
+ * Otherwise, including every build against OpenSSL 3.0 or later, OpenSSL's
+ * default secure random generator is used.
  * <p>
  * See https://wiki.openssl.org/index.php/Random_Numbers
  * See http://en.wikipedia.org/wiki/RdRand

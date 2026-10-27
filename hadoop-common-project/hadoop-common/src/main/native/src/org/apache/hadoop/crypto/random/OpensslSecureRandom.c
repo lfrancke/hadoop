@@ -90,8 +90,10 @@ static __dlsym_RAND_bytes dlsym_RAND_bytes;
 static __dlsym_ERR_get_error dlsym_ERR_get_error;
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 static ENGINE * openssl_rand_init(void);
 static void openssl_rand_clean(ENGINE *eng, int clean_locks);
+#endif
 static int openssl_rand_bytes(unsigned char *buf, int num);
 
 JNIEXPORT void JNICALL Java_org_apache_hadoop_crypto_random_OpensslSecureRandom_initSR
@@ -170,7 +172,9 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_crypto_random_OpensslSecureRandom_
                       env, openssl, "ERR_get_error");
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   openssl_rand_init();
+#endif
 }
 
 JNIEXPORT jboolean JNICALL Java_org_apache_hadoop_crypto_random_OpensslSecureRandom_nextRandBytes___3B
@@ -307,12 +311,14 @@ static unsigned long pthreads_thread_id(void)
 #endif /* UNIX */
 
 /**
- * If using an Intel chipset with RDRAND, the high-performance hardware
- * random number generator will be used.
+ * Before OpenSSL 3.0, the RDRAND engine is made the default RAND method if
+ * the CPU supports it. OpenSSL 3.0 deprecates the ENGINE API and some
+ * distributions build without it, so from 3.0 on RAND_bytes uses OpenSSL's
+ * default DRBG.
  */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 static ENGINE * openssl_rand_init(void)
 {
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   locks_setup();
   
@@ -344,12 +350,10 @@ static ENGINE * openssl_rand_init(void)
   }
   
   return eng;
-#endif
 }
 
 static void openssl_rand_clean(ENGINE *eng, int clean_locks)
 {
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
   if (NULL != eng) {
     dlsym_ENGINE_finish(eng);
     dlsym_ENGINE_free(eng);
@@ -360,8 +364,8 @@ static void openssl_rand_clean(ENGINE *eng, int clean_locks)
     locks_cleanup();
   }
 #endif
-#endif
 }
+#endif
 
 static int openssl_rand_bytes(unsigned char *buf, int num)
 {
